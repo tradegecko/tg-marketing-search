@@ -79,7 +79,7 @@ function prunePages(data) {
   if (
        data.deleted_at === 0
     && data.currently_published
-    //&& (data.name && data.name.includes('[Site Page]'))
+    && (data.name && data.name.toLowerCase().replace(/[-_ ]+/g, ' ').includes('[site page]'))
   ) {
     return true;
   }

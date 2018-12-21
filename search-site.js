@@ -57,30 +57,29 @@ function filterPageByTerm(term) {
 
 function prioritizePostsFor(term) {
   return function(a, b) {
-    if (a.title.toLowerCase().includes(term)) {
-      if (!b.title.toLowerCase().includes(term)) {
-        return -1;
-      }
-    } else if (b.title.toLowerCase().includes(term)) {
-      return 1;
-    }
+    let titleScore = scoreFor('title', a, b);
+    if (titleScore) { return titleScore; }
 
-    if (a.description.toLowerCase().includes(term)) {
-      if (!b.description.toLowerCase().includes(term)) {
-        return -1;
-      }
-    } else if (b.description.toLowerCase().includes(term)) {
-      return 1;
-    }
+    let descriptionScore = scoreFor('description', a, b);
+    if (descriptionScore) { return descriptionScore; }
 
-    if (a.author.toLowerCase().includes(term)) {
-      if (!b.author.toLowerCase().includes(term)) {
-        return -1;
-      }
-    } else if (b.author.toLowerCase().includes(term)) {
-      return 1;
-    }
+    let authorScore = scoreFor('author', a, b);
+    if (authorScore) { return authorScore; }
 
     return 0;
+  }
+
+  function scoreFor(prop, a, b) {
+    if (a[prop].toLowerCase().includes(term)) {
+      if (!b[prop].toLowerCase().includes(term)) {
+        return -1;
+      }
+      let offsetScore = a[prop].toLowerCase().indexOf(term) - b[prop].toLowerCase().indexOf(term);
+      if (offsetScore){
+        return offsetScore;
+      }
+    } else if (b[prop].toLowerCase().includes(term)) {
+      return 1;
+    }
   }
 }
