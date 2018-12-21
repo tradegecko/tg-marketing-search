@@ -9,6 +9,10 @@ module.exports = initiSiteSearch;
 
 
 function initiSiteSearch(request, response, next) {
+  if (request.query['refresh-page-list-first'] && request.query['refresh-page-list-first'] === 'true') {
+    sitePageList.refreshList();
+  }
+
   if (sitePageList.initialised) {
     searchSite(request, response, next);
   } else {
