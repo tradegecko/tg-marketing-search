@@ -2,7 +2,7 @@ require('dotenv').config();
 const https = require('https');
 const fs = require('fs');
 
-const resultsCachePath = './cached-hubdb-pages.json';
+const resultsCachePath = './cache/cached-hubdb-pages.json';
 const HAPI_KEY = process.env.HAPI_KEY;
 const PORTAL_ID = process.env.PORTAL_ID;
 const limit = 100;

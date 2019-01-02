@@ -23,6 +23,8 @@ app.get('/blog',
   searchBlog
 );
 
+app.use('/site/data', express.static('./cache'))
+
 app.get('*', (request, resource, next) => {
   return resource
     .status(404)

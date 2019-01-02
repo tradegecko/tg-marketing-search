@@ -2,7 +2,7 @@ require('dotenv').config();
 const https = require('https');
 const fs = require('fs');
 
-const resultsCachePath = './cached-searched-pages.json';
+const resultsCachePath = './cache/cached-searched-pages.json';
 const HAPI_KEY = process.env.HAPI_KEY;
 const limit = 100;
 const updatePeriod = 60 * 60 * 1000;
