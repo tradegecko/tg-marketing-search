@@ -20,6 +20,7 @@ module.exports = initiSiteSearch;
 function initiSiteSearch(request, response, next) {
   if (request.query['refresh-page-list-first'] && request.query['refresh-page-list-first'] === 'true') {
     searchedPageList.refreshList();
+    externalPageList.refreshList();
   }
 
   searchSite(request, response, next);
