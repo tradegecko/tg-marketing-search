@@ -36,6 +36,7 @@ async function updatePageList() {
   let validPages = [];
   let offset = 0;
   let responseData = null;
+  let cancelUpdate = false;
 
   do {
     console.log(`Fetching data on ${limit} site pages starting with offset of ${offset}.`);
@@ -49,24 +50,27 @@ async function updatePageList() {
         validPages.push(...mappedPages);
       }
     } catch(e) {
+      cancelUpdate = true;
       console.log(e);
     }
     offset += limit;
   } while(responseData.objects && responseData.objects.length > 0);
 
-  allPages.splice(0, allPages.length, ...validPages);
-  fs.writeFile(resultsCachePath, JSON.stringify(validPages), err => {
-    if (err) throw err;
-    console.log('The valid pages json was successfully updated.');
-  });
-  console.log(`Finished updating site page list. Total pages: ${allPages.length}`);
-  runCompleteCallbacks();
+  if (!cancelUpdate) {
+    allPages.splice(0, allPages.length, ...validPages);
+    fs.writeFile(resultsCachePath, JSON.stringify(validPages), err => {
+      if (err) throw err;
+      console.log('The valid pages json was successfully updated.');
+    });
+    console.log(`Finished updating site page list. Total pages: ${allPages.length}`);
+    runCompleteCallbacks();
+  }
 
-  console.log(`Will update site page list again in ~${Math.round(updatePeriod / 1000 / 60)} minutes.`);
+  console.log(`Will update external page list again in ~${Math.round(updatePeriod / 1000 / 60)} minutes.`);
   updateTimeout = setTimeout(updatePageList, updatePeriod);
   currentlyUpdating = false;
 
-  return 'updated';
+  return cancelUpdate ? 'external page list update failed' : 'external page list updated';
 };
 
 function runCompleteCallbacks() {
@@ -96,7 +100,7 @@ function mapPage(data) {
     description: data.values[columnMap.description] || '',
     url:         data.values[columnMap.url]         || '',
     author:      data.values[columnMap.author]      || '',
-    image:       data.values[columnMap.image].url   || '',
+    image:       (data.values[columnMap.image] && data.values[columnMap.image].url ) || '',
     imageAlt:    '',
   };
 }

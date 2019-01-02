@@ -57,7 +57,7 @@ function searchSite(request, response, next) {
 
 function filterPageByTerm(term) {
   return function(page) {
-    if (!page.title) {
+    if (!(page.title || page.description || page.author)) {
       return false;
     }
     return page.title.toLowerCase().includes(term)
