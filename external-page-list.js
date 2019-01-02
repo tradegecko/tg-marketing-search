@@ -1,4 +1,4 @@
-module.exports = [
+const externalPages = [
   {
     title: 'Webinar | How to introduce a subscription model',
     description: 'How to introduce a subscription business model & take your eCommerce business to new heights',
@@ -17,3 +17,5 @@ module.exports = [
     //imageAlt: '',
   },
 ];
+
+module.exports = externalPages;

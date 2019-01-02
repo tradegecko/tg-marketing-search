@@ -1,35 +1,26 @@
 require('dotenv').config();
 const https = require('https');
+const fs = require('fs');
 
+const resultsCachePath = './cached-searched-pages.json';
 const HAPI_KEY = process.env.HAPI_KEY;
 const limit = 100;
 const updatePeriod = 60 * 60 * 1000;
 const pagesAPIBaseURL = `https://api.hubapi.com/content/api/v2/pages?hapikey=${HAPI_KEY}&limit=${limit}`;
 let updateTimeout = null;
 
-const allPages           = [];
-const afterInitCallbacks = [];
-allPages.initialised = true;
-allPages.afterinit = func => {
-  afterInitCallbacks.push(func);
-};
+let completeCallbacks = [];
+
+const allPages = JSON.parse(fs.readFileSync(resultsCachePath));
 allPages.refreshList = updatePageList;
+allPages.onComplete = func => completeCallbacks.push(func);
 
 module.exports = allPages;
 
 updatePageList();
 
-function afterInit() {
-  afterInitCallbacks.forEach(func => {
-    func();
-  });
-  afterInitCallbacks.length = 0;
-}
-
 async function updatePageList() {
   clearTimeout(updateTimeout);
-  if (!allPages.initialised) { return 'updating'; }
-  allPages.initialised = false;
 
   let validPages = [];
   let offset = 0;
@@ -54,17 +45,22 @@ async function updatePageList() {
   } while(responseData.objects.length > 0);
 
   allPages.splice(0, allPages.length, ...validPages);
-  if (!allPages.initialised) {
-    allPages.initialised = true;
-    afterInit();
-  }
+  fs.writeFile(resultsCachePath, JSON.stringify(validPages), err => {
+    if (err) throw err;
+    console.log('The valid pages json was successfully updated.');
+  });
   console.log(`Finished updating site page list. Total pages: ${allPages.length}`);
+  runCompleteCallbacks();
 
   console.log(`Will update site page list again in ~${Math.round(updatePeriod / 1000 / 60)} minutes.`);
   updateTimeout = setTimeout(updatePageList, updatePeriod);
 
   return 'updated';
 };
+
+function runCompleteCallbacks() {
+  completeCallbacks.forEach(func => func(allPages));
+}
 
 function get(url) {
   return new Promise((resolve, reject) => {

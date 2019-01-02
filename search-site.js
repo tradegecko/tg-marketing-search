@@ -1,25 +1,25 @@
 const FuzzySearch  = require('fuzzy-search');
-const sitePageList = require('./site-page-list.js');
+const searchedPageList = require('./site-page-list.js');
+const externalPageList = require('./external-page-list.js');
 
-const searcher     = new FuzzySearch(sitePageList, ['title', 'description', 'author'], { sort: true, caseSensitive: false });
+const fullPageList = [];
+const searcher = new FuzzySearch(fullPageList, ['title', 'description', 'author'], { sort: true, caseSensitive: false });
 const maxPageCount = 20;
 
+respreadAllPages();
+searchedPageList.onComplete(_ => {
+  respreadAllPages();
+});
 
 module.exports = initiSiteSearch;
 
 
 function initiSiteSearch(request, response, next) {
   if (request.query['refresh-page-list-first'] && request.query['refresh-page-list-first'] === 'true') {
-    sitePageList.refreshList();
+    searchedPageList.refreshList();
   }
 
-  if (sitePageList.initialised) {
-    searchSite(request, response, next);
-  } else {
-    sitePageList.afterinit(() => {
-      searchSite(request, response, next);
-    });
-  }
+  searchSite(request, response, next);
 }
 
 function searchSite(request, response, next) {
@@ -35,7 +35,7 @@ function searchSite(request, response, next) {
   let lowerCaseTerm = request.query.term.toLowerCase();
 
   response.status(200);
-  let exactResults = sitePageList.filter(filterPageByTerm(lowerCaseTerm));
+  let exactResults = fullPageList.filter(filterPageByTerm(lowerCaseTerm));
 
   if (exactResults.length > 0) {
     let prioritizePosts = prioritizePostsFor(lowerCaseTerm);
@@ -53,6 +53,9 @@ function searchSite(request, response, next) {
 
 function filterPageByTerm(term) {
   return function(page) {
+    if (!page.title) {
+      return false;
+    }
     return page.title.toLowerCase().includes(term)
       || page.description.toLowerCase().includes(term)
       || page.author.toLowerCase().includes(term);
@@ -86,4 +89,8 @@ function prioritizePostsFor(term) {
       return 1;
     }
   }
+}
+
+function respreadAllPages() {
+  fullPageList.splice(0, fullPageList.length, ...searchedPageList, ...externalPageList);
 }
