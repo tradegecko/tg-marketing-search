@@ -8,6 +8,7 @@ const limit = 100;
 const updatePeriod = 60 * 60 * 1000;
 const pagesAPIBaseURL = `https://api.hubapi.com/content/api/v2/pages?hapikey=${HAPI_KEY}&limit=${limit}`;
 let updateTimeout = null;
+let currentlyUpdating = false;
 
 let completeCallbacks = [];
 
@@ -20,7 +21,9 @@ module.exports = allPages;
 updatePageList();
 
 async function updatePageList() {
+  if (currentlyUpdating) { return; }
   clearTimeout(updateTimeout);
+  currentlyUpdating = true;
 
   let validPages = [];
   let offset = 0;
@@ -54,6 +57,7 @@ async function updatePageList() {
 
   console.log(`Will update site page list again in ~${Math.round(updatePeriod / 1000 / 60)} minutes.`);
   updateTimeout = setTimeout(updatePageList, updatePeriod);
+  currentlyUpdating = false;
 
   return 'updated';
 };

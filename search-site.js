@@ -10,6 +10,9 @@ respreadAllPages();
 searchedPageList.onComplete(_ => {
   respreadAllPages();
 });
+externalPageList.onComplete(_ => {
+  respreadAllPages();
+});
 
 module.exports = initiSiteSearch;
 
