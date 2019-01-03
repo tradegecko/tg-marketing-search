@@ -39,7 +39,7 @@ function searchSite(request, response, next) {
     });
   }
 
-  let lowerCaseTerm = request.query.term.trim().replace(/\s+/g, '').toLowerCase();
+  let lowerCaseTerm = request.query.term.trim().replace(/\s+/g, ' ').toLowerCase();
 
   response.status(200);
   let exactResults = fullPageList.filter(filterPageByTerm(lowerCaseTerm));
@@ -63,7 +63,7 @@ function searchSite(request, response, next) {
     event: 'Site search',
     properties: {
       term: request.query.term,
-      normalizedTerm: lowerCaseTerm.replace(/[^a-z ]+/g, ''),
+      normalizedTerm: lowerCaseTerm.replace(/[^\w\s]+/g, ''),
     },
   });
 }
