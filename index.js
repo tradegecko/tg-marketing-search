@@ -10,6 +10,8 @@ const searchBlog  = require('./search-blog.js');
 
 const app = express();
 
+app.use(express.json());
+app.use('/site/data', express.static('./cache'));
 
 app.get('/site',
   domainCheck,
@@ -22,8 +24,6 @@ app.get('/blog',
   setHeaders,
   searchBlog
 );
-
-app.use('/site/data', express.static('./cache'))
 
 app.get('*', (request, resource, next) => {
   return resource

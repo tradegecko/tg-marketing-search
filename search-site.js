@@ -1,7 +1,10 @@
+require('dotenv').config();
 const FuzzySearch  = require('fuzzy-search');
 const searchedPageList = require('./site-page-list.js');
 const externalPageList = require('./external-page-list.js');
+const Segment = require('analytics-node');
 
+const analytics = new Segment(process.env.SEGMENT_WRITE_KEY);
 const fullPageList = [];
 const searcher = new FuzzySearch(fullPageList, ['title', 'description', 'author'], { sort: true, caseSensitive: false });
 const maxPageCount = 20;
@@ -32,27 +35,37 @@ function searchSite(request, response, next) {
     response.send({
       errors: [
         'Search term required: Please provide a search term as a query parameter in the form of /?term=query',
-      ]
+      ],
     });
   }
 
-  let lowerCaseTerm = request.query.term.toLowerCase();
+  let lowerCaseTerm = request.query.term.trim().replace(/\s+/g, '').toLowerCase();
 
   response.status(200);
   let exactResults = fullPageList.filter(filterPageByTerm(lowerCaseTerm));
+  let returnExactResults = exactResults.length > 0;
+  let results;
 
-  if (exactResults.length > 0) {
+  if (returnExactResults) {
     let prioritizePosts = prioritizePostsFor(lowerCaseTerm);
-    response.send({
-      exact: true,
-      results: exactResults.sort(prioritizePosts).slice(0, maxPageCount),
-    });
+    results = exactResults.sort(prioritizePosts).slice(0, maxPageCount);
   } else {
-    response.send({
-      exact: false,
-      results: searcher.search(request.query.term).slice(0, maxPageCount),
-    });
+    results = searcher.search(request.query.term).slice(0, maxPageCount);
   }
+
+  response.send({
+    exact: returnExactResults,
+    results,
+  });
+
+  analytics.track({
+    anonymousId: request.query.anonymousId || 'site search',
+    event: 'Site search',
+    properties: {
+      term: request.query.term,
+      normalizedTerm: lowerCaseTerm.replace(/[^a-z ]+/g, ''),
+    },
+  });
 }
 
 function filterPageByTerm(term) {
