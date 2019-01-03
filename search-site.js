@@ -64,6 +64,8 @@ function searchSite(request, response, next) {
     properties: {
       term: request.query.term,
       normalizedTerm: lowerCaseTerm.replace(/[^\w\s]+/g, ''),
+      exact: returnExactResults,
+      resultCount: results.length,
     },
   });
 }
