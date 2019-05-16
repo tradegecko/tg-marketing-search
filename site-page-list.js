@@ -1,7 +1,12 @@
 require('dotenv').config();
 const https = require('https');
 const fs = require('fs');
+const {
+  upload: uploadToS3,
+  download: downloadFromS3
+} = require('./s3.js');
 
+const S3FileName = 'cached-searched-pages.json';
 const resultsCachePath = './cache/cached-searched-pages.json';
 const HAPI_KEY = process.env.HAPI_KEY;
 const limit = 100;
@@ -12,7 +17,9 @@ let currentlyUpdating = false;
 
 let completeCallbacks = [];
 
-const allPages = JSON.parse(fs.readFileSync(resultsCachePath));
+const allPages = [];
+downloadFromS3(S3FileName)
+  .then(pages => allPages.splice(0, allPages.length, ...pages));
 allPages.refreshList = updatePageList;
 allPages.onUpdate = func => completeCallbacks.push(func);
 
@@ -51,10 +58,15 @@ async function updatePageList() {
 
   if (!cancelUpdate) {
     allPages.splice(0, allPages.length, ...validPages);
+    /*
     fs.writeFile(resultsCachePath, JSON.stringify(validPages), err => {
       if (err) throw err;
       console.log('The valid pages json was successfully updated.');
     });
+    */
+    console.log('Uploading site page list to S3…');
+    await uploadToS3(S3FileName, JSON.stringify(validPages));
+
     console.log(`Finished updating site page list. Total pages: ${allPages.length}`);
     runCompleteCallbacks();
   }
