@@ -10,10 +10,10 @@ const searcher = new FuzzySearch(fullPageList, ['title', 'description', 'author'
 const maxPageCount = 20;
 
 respreadAllPages();
-searchedPageList.onComplete(_ => {
+searchedPageList.onUpdate(_ => {
   respreadAllPages();
 });
-externalPageList.onComplete(_ => {
+externalPageList.onUpdate(_ => {
   respreadAllPages();
 });
 

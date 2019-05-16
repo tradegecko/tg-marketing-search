@@ -22,7 +22,7 @@ let completeCallbacks = [];
 
 const allPages = JSON.parse(fs.readFileSync(resultsCachePath));
 allPages.refreshList = updatePageList;
-allPages.onComplete = func => completeCallbacks.push(func);
+allPages.onUpdate = func => completeCallbacks.push(func);
 
 module.exports = allPages;
 
