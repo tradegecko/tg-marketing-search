@@ -1,10 +1,8 @@
-require('dotenv').config();
 const FuzzySearch  = require('fuzzy-search');
 const searchedPageList = require('./site-page-list.js');
 const externalPageList = require('./external-page-list.js');
-const Segment = require('analytics-node');
+const track = require('./analytics.js');
 
-const analytics = new Segment(process.env.SEGMENT_WRITE_KEY);
 const fullPageList = [];
 const searcher = new FuzzySearch(fullPageList, ['title', 'description', 'author'], { sort: true, caseSensitive: false });
 const maxPageCount = 20;
@@ -16,6 +14,7 @@ searchedPageList.onUpdate(_ => {
 externalPageList.onUpdate(_ => {
   respreadAllPages();
 });
+
 
 module.exports = initiSiteSearch;
 
@@ -58,7 +57,7 @@ function searchSite(request, response, next) {
     results,
   });
 
-  analytics.track({
+  track({
     anonymousId: request.query.anonymousId || 'site search',
     event: 'Site search',
     properties: {
