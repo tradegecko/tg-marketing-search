@@ -1,8 +1,8 @@
 require('dotenv').config();
 const Segment = require('analytics-node');
 const analytics = new Segment(process.env.SEGMENT_WRITE_KEY);
-
-let { track } = analytics;
+// the track function uses `this` internally
+const track = analytics.track.bind(analytics);
 
 
 module.exports = track;
