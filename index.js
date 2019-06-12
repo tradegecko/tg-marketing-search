@@ -7,9 +7,10 @@ const setHeaders  = require('./set-headers.js');
 const searchSite  = require('./search-site.js');
 const searchBlog  = require('./search-blog.js');
 
-
 const app = express();
 
+
+// ROUTING
 app.use('/site/data', express.static('./cache'));
 
 app.get('/site',
@@ -29,6 +30,7 @@ app.get('*', (request, resource, next) => {
     .status(404)
     .send({ errors: ['Content not found: This probably doesn\'t exist.'] });
 });
+// END ROUTING
 
 
 app.listen(process.env.PORT, () =>

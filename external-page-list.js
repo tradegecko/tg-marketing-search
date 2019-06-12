@@ -15,18 +15,42 @@ const columnMap = {
   image: 6,
 };
 const pagesAPIBaseURL = `https://api.hubapi.com/hubdb/api/v2/tables/1034244/rows?hapikey=${HAPI_KEY}&limit=${limit}&portalId=${PORTAL_ID}`;
+const allPages = JSON.parse(fs.readFileSync(resultsCachePath));
 let updateTimeout = null;
 let currentlyUpdating = false;
-
 let completeCallbacks = [];
 
-const allPages = JSON.parse(fs.readFileSync(resultsCachePath));
-allPages.refreshList = updatePageList;
-allPages.onUpdate = func => completeCallbacks.push(func);
+function mapPage(data) {
+  return {
+    title:       data.values[columnMap.title]       || '',
+    description: data.values[columnMap.description] || '',
+    url:         data.values[columnMap.url]         || '',
+    author:      data.values[columnMap.author]      || '',
+    image:       (data.values[columnMap.image] && data.values[columnMap.image].url ) || '',
+    imageAlt:    '',
+  };
+}
 
-module.exports = allPages;
+function runCompleteCallbacks() {
+  completeCallbacks.forEach(func => func(allPages));
+}
 
-updatePageList();
+function get(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (resource) => {
+      var data = '';
+      resource.on('data', (chunk) => {
+        data += chunk;
+      });
+      resource.on('end', () => {
+        resolve(data);
+      });
+    })
+    .on('error', error => {
+      reject(error);
+    });
+  });
+}
 
 async function updatePageList() {
   if (currentlyUpdating) { return; }
@@ -73,34 +97,10 @@ async function updatePageList() {
   return cancelUpdate ? 'external page list update failed' : 'external page list updated';
 };
 
-function runCompleteCallbacks() {
-  completeCallbacks.forEach(func => func(allPages));
-}
 
-function get(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, (resource) => {
-      var data = '';
-      resource.on('data', (chunk) => {
-        data += chunk;
-      });
-      resource.on('end', () => {
-        resolve(data);
-      });
-    })
-    .on('error', error => {
-      reject(error);
-    });
-  });
-}
+allPages.refreshList = updatePageList;
+allPages.onUpdate = func => completeCallbacks.push(func);
+updatePageList();
 
-function mapPage(data) {
-  return {
-    title:       data.values[columnMap.title]       || '',
-    description: data.values[columnMap.description] || '',
-    url:         data.values[columnMap.url]         || '',
-    author:      data.values[columnMap.author]      || '',
-    image:       (data.values[columnMap.image] && data.values[columnMap.image].url ) || '',
-    imageAlt:    '',
-  };
-}
+
+module.exports = allPages;

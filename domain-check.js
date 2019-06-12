@@ -1,9 +1,6 @@
 require('dotenv').config();
 
 
-module.exports = domainCheck;
-
-
 const DOMAIN_WHITELIST = [
   'hs-sites.com',
   'www.tradegecko.com',
@@ -28,3 +25,6 @@ function domainCheck(request, response, next) {
 
   return next();
 }
+
+
+module.exports = domainCheck;

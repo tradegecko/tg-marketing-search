@@ -7,25 +7,45 @@ const fullPageList = [];
 const searcher = new FuzzySearch(fullPageList, ['title', 'description', 'author'], { sort: true, caseSensitive: false });
 const maxPageCount = 20;
 
-respreadAllPages();
-searchedPageList.onUpdate(_ => {
-  respreadAllPages();
-});
-externalPageList.onUpdate(_ => {
-  respreadAllPages();
-});
 
+function filterPageByTerm(term) {
+  return function(page) {
+    if (!(page.title || page.description || page.author)) {
+      return false;
+    }
+    return page.title.toLowerCase().includes(term)
+      || page.description.toLowerCase().includes(term)
+      || page.author.toLowerCase().includes(term);
+  }
+}
 
-module.exports = initiSiteSearch;
+function prioritizePostsFor(term) {
+  return function(a, b) {
+    let titleScore = scoreFor('title', a, b);
+    if (titleScore) { return titleScore; }
 
+    let descriptionScore = scoreFor('description', a, b);
+    if (descriptionScore) { return descriptionScore; }
 
-function initiSiteSearch(request, response, next) {
-  if (request.query['refresh-page-list-first'] && request.query['refresh-page-list-first'] === 'true') {
-    searchedPageList.refreshList();
-    externalPageList.refreshList();
+    let authorScore = scoreFor('author', a, b);
+    if (authorScore) { return authorScore; }
+
+    return 0;
   }
 
-  searchSite(request, response, next);
+  function scoreFor(prop, a, b) {
+    if (a[prop].toLowerCase().includes(term)) {
+      if (!b[prop].toLowerCase().includes(term)) {
+        return -1;
+      }
+      let offsetScore = a[prop].toLowerCase().indexOf(term) - b[prop].toLowerCase().indexOf(term);
+      if (offsetScore){
+        return offsetScore;
+      }
+    } else if (b[prop].toLowerCase().includes(term)) {
+      return 1;
+    }
+  }
 }
 
 function searchSite(request, response, next) {
@@ -69,46 +89,27 @@ function searchSite(request, response, next) {
   });
 }
 
-function filterPageByTerm(term) {
-  return function(page) {
-    if (!(page.title || page.description || page.author)) {
-      return false;
-    }
-    return page.title.toLowerCase().includes(term)
-      || page.description.toLowerCase().includes(term)
-      || page.author.toLowerCase().includes(term);
-  }
-}
-
-function prioritizePostsFor(term) {
-  return function(a, b) {
-    let titleScore = scoreFor('title', a, b);
-    if (titleScore) { return titleScore; }
-
-    let descriptionScore = scoreFor('description', a, b);
-    if (descriptionScore) { return descriptionScore; }
-
-    let authorScore = scoreFor('author', a, b);
-    if (authorScore) { return authorScore; }
-
-    return 0;
-  }
-
-  function scoreFor(prop, a, b) {
-    if (a[prop].toLowerCase().includes(term)) {
-      if (!b[prop].toLowerCase().includes(term)) {
-        return -1;
-      }
-      let offsetScore = a[prop].toLowerCase().indexOf(term) - b[prop].toLowerCase().indexOf(term);
-      if (offsetScore){
-        return offsetScore;
-      }
-    } else if (b[prop].toLowerCase().includes(term)) {
-      return 1;
-    }
-  }
-}
-
 function respreadAllPages() {
   fullPageList.splice(0, fullPageList.length, ...searchedPageList, ...externalPageList);
 }
+
+function initiSiteSearch(request, response, next) {
+  if (request.query['refresh-page-list-first'] && request.query['refresh-page-list-first'] === 'true') {
+    searchedPageList.refreshList();
+    externalPageList.refreshList();
+  }
+
+  searchSite(request, response, next);
+}
+
+
+respreadAllPages();
+searchedPageList.onUpdate(_ => {
+  respreadAllPages();
+});
+externalPageList.onUpdate(_ => {
+  respreadAllPages();
+});
+
+
+module.exports = initiSiteSearch;

@@ -1,5 +1,3 @@
-module.exports = setHeaders;
-
 function setHeaders(request, response, next) {
   response.header({
     'Access-Control-Allow-Origin':  request.headers.origin,
@@ -9,3 +7,6 @@ function setHeaders(request, response, next) {
 
   next();
 }
+
+
+module.exports = setHeaders;

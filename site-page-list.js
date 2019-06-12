@@ -2,8 +2,10 @@ require('dotenv').config();
 const https = require('https');
 const fs = require('fs');
 
-const resultsCachePath = './cache/cached-searched-pages.json';
 const HAPI_KEY = process.env.HAPI_KEY;
+
+
+const resultsCachePath = './cache/cached-searched-pages.json';
 const limit = 100;
 const updatePeriod = 60 * 60 * 1000;
 const pagesAPIBaseURL = `https://api.hubapi.com/content/api/v2/pages?hapikey=${HAPI_KEY}&limit=${limit}`;
@@ -11,14 +13,54 @@ let updateTimeout = null;
 let currentlyUpdating = false;
 
 let completeCallbacks = [];
-
 const allPages = JSON.parse(fs.readFileSync(resultsCachePath));
-allPages.refreshList = updatePageList;
-allPages.onUpdate = func => completeCallbacks.push(func);
 
-module.exports = allPages;
 
-updatePageList();
+function runCompleteCallbacks() {
+  completeCallbacks.forEach(func => func(allPages));
+}
+
+function get(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (resource) => {
+      var data = '';
+      resource.on('data', (chunk) => {
+        data += chunk;
+      });
+      resource.on('end', () => {
+        resolve(data);
+      });
+    })
+    .on('error', error => {
+      reject(error);
+    });
+  });
+}
+
+function prunePages(data) {
+  if (
+    data.deleted_at === 0
+    && data.currently_published
+    && (
+      data.name
+      && data.name.toLowerCase().replace(/[-_ ]+/g, ' ').includes('[site page]')
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function simplifyPage(data) {
+  return {
+    title:       data.title || '',
+    description: data.meta_description || '',
+    url:         data.absolute_url || '',
+    image:       (data.use_featured_image && data.featured_image) || data.screenshot_preview_url || '',
+    imageAlt:    data.featured_image_alt_text || '',
+    author:      data.author_name || '',
+  };
+}
 
 async function updatePageList() {
   if (currentlyUpdating) { return; }
@@ -66,45 +108,10 @@ async function updatePageList() {
   return cancelUpdate ? 'site page list update failed' : 'site page list updated';
 };
 
-function runCompleteCallbacks() {
-  completeCallbacks.forEach(func => func(allPages));
-}
 
-function get(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, (resource) => {
-      var data = '';
-      resource.on('data', (chunk) => {
-        data += chunk;
-      });
-      resource.on('end', () => {
-        resolve(data);
-      });
-    })
-    .on('error', error => {
-      reject(error);
-    });
-  });
-}
+allPages.refreshList = updatePageList;
+allPages.onUpdate = func => completeCallbacks.push(func);
+updatePageList();
 
-function prunePages(data) {
-  if (
-       data.deleted_at === 0
-    && data.currently_published
-    && (data.name && data.name.toLowerCase().replace(/[-_ ]+/g, ' ').includes('[site page]'))
-  ) {
-    return true;
-  }
-  return false;
-}
 
-function simplifyPage(data) {
-  return {
-    title:       data.title || '',
-    description: data.meta_description || '',
-    url:         data.absolute_url || '',
-    image:       (data.use_featured_image && data.featured_image) || data.screenshot_preview_url || '',
-    imageAlt:    data.featured_image_alt_text || '',
-    author:      data.author_name || '',
-  };
-}
+module.exports = allPages;

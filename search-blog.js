@@ -1,9 +1,11 @@
 require('dotenv').config();
-const https   = require('https');
+const https = require('https');
 
-const HAPI_KEY         = process.env.HAPI_KEY;
-const version          = '1.0.1'
-const BASE_URL         = 'https://api.hubapi.com/content/api/v2/blog-posts';
+const HAPI_KEY = process.env.HAPI_KEY;
+
+
+const version = '1.0.1'
+const BASE_URL = 'https://api.hubapi.com/content/api/v2/blog-posts';
 const API_PARAMS = [
   `hapikey=${HAPI_KEY}`,
   'archived=false',
@@ -15,9 +17,10 @@ const API_PARAMS = [
 const CACHE_LIFESPAN   = 1000 * 60 * 60 * 6; // 6 hours
 const CACHED_SEARCHES = {};
 
-module.exports = initiateSearch;
-
-setInterval(pruneCache, CACHE_LIFESPAN / 4);
+function buildAPICall(searchTerm) {
+  let searchParam = `name__icontains=${ searchTerm }`;
+  return `${ BASE_URL }?${ [...API_PARAMS, searchParam].join('&') }`;
+}
 
 function initiateSearch(request, response, next) {
   let searchTerm = request.query.term;
@@ -101,7 +104,8 @@ function pruneCache() {
   });
 }
 
-function buildAPICall(searchTerm) {
-  let searchParam = `name__icontains=${ searchTerm }`;
-  return `${ BASE_URL }?${ [...API_PARAMS, searchParam].join('&') }`;
-}
+
+setInterval(pruneCache, CACHE_LIFESPAN / 4);
+
+
+module.exports = initiateSearch;
