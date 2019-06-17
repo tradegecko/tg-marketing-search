@@ -55,6 +55,7 @@ function simplifyPage(data) {
   return {
     title:       data.title || '',
     description: data.meta_description || '',
+    tags:        '',
     url:         data.absolute_url || '',
     image:       (data.use_featured_image && data.featured_image) || data.screenshot_preview_url || '',
     imageAlt:    data.featured_image_alt_text || '',

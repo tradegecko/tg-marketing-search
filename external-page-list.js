@@ -13,6 +13,7 @@ const columnMap = {
   url: 4,
   author: 5,
   image: 6,
+  tags: 7,
 };
 const pagesAPIBaseURL = `https://api.hubapi.com/hubdb/api/v2/tables/1034244/rows?hapikey=${HAPI_KEY}&limit=${limit}&portalId=${PORTAL_ID}`;
 const allPages = JSON.parse(fs.readFileSync(resultsCachePath));
@@ -23,6 +24,7 @@ let completeCallbacks = [];
 function mapPage(data) {
   return {
     title:       data.values[columnMap.title]       || '',
+    tags:        data.values[columnMap.tags]        || '',
     description: data.values[columnMap.description] || '',
     url:         data.values[columnMap.url]         || '',
     author:      data.values[columnMap.author]      || '',

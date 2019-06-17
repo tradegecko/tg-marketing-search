@@ -15,6 +15,7 @@ function filterPageByTerm(term) {
     }
     return page.title.toLowerCase().includes(term)
       || page.description.toLowerCase().includes(term)
+      || page.tags.toLowerCase().includes(term)
       || page.author.toLowerCase().includes(term);
   }
 }
@@ -26,6 +27,9 @@ function prioritizePostsFor(term) {
 
     let descriptionScore = scoreFor('description', a, b);
     if (descriptionScore) { return descriptionScore; }
+
+    let tagsScore = scoreFor('tags', a, b);
+    if (tagsScore) { return tagsScore; }
 
     let authorScore = scoreFor('author', a, b);
     if (authorScore) { return authorScore; }
