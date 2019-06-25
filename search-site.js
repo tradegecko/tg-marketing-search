@@ -1,10 +1,36 @@
-const FuzzySearch  = require('fuzzy-search');
+//const FuzzySearch  = require('fuzzy-search');
+const Fuse = require('fuse.js');
 const searchedPageList = require('./site-page-list.js');
 const externalPageList = require('./external-page-list.js');
 const track = require('./analytics.js');
 
 const fullPageList = [];
-const searcher = new FuzzySearch(fullPageList, ['title', 'description', 'author'], { sort: true, caseSensitive: false });
+var fuzzySearchOptions = {
+  shouldSort: true,
+  threshold: 0.5,
+  location: 0,
+  maxPatternLength: Infinity,
+  keys: [
+    {
+      name: 'title',
+      weight: 0.4,
+    },
+    {
+      name: 'tags',
+      weight: 0.3,
+    },
+    {
+      name: 'description',
+      weight: 0.2,
+    },
+    {
+      name: 'author',
+      weight: 0.1,
+    },
+  ],
+};
+//const searcher = new FuzzySearch(fullPageList, ['title', 'description', 'author'], { sort: true, caseSensitive: false });
+const searcher = new Fuse(fullPageList, fuzzySearchOptions)
 const maxPageCount = 20;
 
 
@@ -52,6 +78,10 @@ function prioritizePostsFor(term) {
   }
 }
 
+function unique(item, i, array) {
+  return array.indexOf(item) === i;
+}
+
 function searchSite(request, response, next) {
   if (!request.query.term) {
     response.status(400);
@@ -67,17 +97,36 @@ function searchSite(request, response, next) {
   response.status(200);
   let exactResults = fullPageList.filter(filterPageByTerm(lowerCaseTerm));
   let returnExactResults = exactResults.length > 0;
-  let results;
+  let prioritizePosts = prioritizePostsFor(lowerCaseTerm);
+  let results = [...exactResults].sort(prioritizePosts);
+  let exactResultCount = results.length;
+  let includeFuzzyResults = false;
+  let fuzzyResultCount = 0;
 
-  if (returnExactResults) {
-    let prioritizePosts = prioritizePostsFor(lowerCaseTerm);
-    results = exactResults.sort(prioritizePosts).slice(0, maxPageCount);
-  } else {
-    results = searcher.search(request.query.term).slice(0, maxPageCount);
+  if (exactResultCount < maxPageCount) {
+    results = [
+      ...results,
+      ...searcher.search(request.query.term),
+    ].filter(unique);
+    if (results.length > exactResultCount) {
+      includeFuzzyResults = true;
+    }
+    fuzzyResultCount = results.length - exactResultCount;
   }
+  let totalResultCount = results.length;
+
+  results = results.slice(0, maxPageCount);
 
   response.send({
     exact: returnExactResults,
+    exactCount: exactResultCount,
+    fuzzy: includeFuzzyResults,
+    fuzzyCount: fuzzyResultCount,
+    totalResultCount: totalResultCount,
+    page: {
+      length: maxPageCount,
+      count: Math.ceil(totalResultCount / maxPageCount),
+    },
     results,
   });
 
