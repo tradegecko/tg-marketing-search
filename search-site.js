@@ -113,8 +113,16 @@ function searchSite(request, response, next) {
     }
     fuzzyResultCount = results.length - exactResultCount;
   }
-  let totalResultCount = results.length;
 
+  let totalResultCount = results.length;
+  results = results.filter((filteringResult, indexOfThisResult, results) => {
+    let firstResultWithSameUrl = results.find(findingResult => findingResult.url === filteringResult.url);
+    if (indexOfThisResult === results.indexOf(firstResultWithSameUrl)) {
+      return true;
+    } else {
+      return false;
+    }
+  });
   results = results.slice(0, maxPageCount);
 
   response.send({
