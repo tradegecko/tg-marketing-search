@@ -4,6 +4,21 @@ Search implementation for the TradeGecko marketing site
 
 # Installation
 
+Create a file called `.env` in the root directory and add the following paramters:
+
+```sh
+# Local settings
+PORT=#[The port you want to run the server on]
+TEST_MODE=true
+
+# Hubspot details
+HAPI_KEY=#[Hubspot HAPI key]
+PORTAL_ID=#[Our Hubspot portal ID]
+
+# Segemnt details
+SEGMENT_WRITE_KEY=#[Segment write key]
+```
+
 - Install [Yarn](https://yarnpkg.com/lang/en/) and run `yarn install` in your terminal of choice.
 - Run `yarn start` in your terminal of choice.
 
