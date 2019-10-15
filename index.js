@@ -41,7 +41,13 @@ ROUTES.forEach(route => {
 app.get('*', (request, resource, next) => {
   return resource
     .status(404)
-    .send({ errors: ['Content not found: This probably doesn\'t exist.'] });
+    .send({
+      errors: [
+        `Content not found: This probably doesn't exist. Current pages include: ${
+          ROUTES.map(route => route.path).join(', ')
+        }`
+      ],
+    });
 });
 // END ROUTING
 
