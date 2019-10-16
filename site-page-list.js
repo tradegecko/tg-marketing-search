@@ -60,6 +60,7 @@ function simplifyPage(data) {
     image:       (data.use_featured_image && data.featured_image) || data.screenshot_preview_url || '',
     imageAlt:    data.featured_image_alt_text || '',
     author:      data.author_name || '',
+    priority:    0,
   };
 }
 
