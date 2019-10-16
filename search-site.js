@@ -33,19 +33,6 @@ var fuzzySearchOptions = {
 const searcher = new Fuse(fullPageList, fuzzySearchOptions)
 const maxPageCount = 20;
 
-
-function filterPageByTerm(term) {
-  return function(page) {
-    if (!(page.title || page.description || page.author)) {
-      return false;
-    }
-    return page.title.toLowerCase().includes(term)
-      || page.description.toLowerCase().includes(term)
-      || page.tags.toLowerCase().includes(term)
-      || page.author.toLowerCase().includes(term);
-  }
-}
-
 function prioritizePostsFor(term) {
   return function(a, b) {
     let titleScore = scoreFor('title', a, b);
@@ -78,10 +65,6 @@ function prioritizePostsFor(term) {
   }
 }
 
-function unique(item, i, array) {
-  return array.indexOf(item) === i;
-}
-
 function searchSite(request, response, next) {
   if (!request.query.term) {
     response.status(400);
@@ -95,24 +78,13 @@ function searchSite(request, response, next) {
   let lowerCaseTerm = request.query.term.trim().replace(/\s+/g, ' ').toLowerCase();
 
   response.status(200);
-  let exactResults = fullPageList.filter(filterPageByTerm(lowerCaseTerm));
-  let returnExactResults = exactResults.length > 0;
-  let prioritizePosts = prioritizePostsFor(lowerCaseTerm);
-  let results = [...exactResults].sort(prioritizePosts);
-  let exactResultCount = results.length;
-  let includeFuzzyResults = false;
-  let fuzzyResultCount = 0;
 
-  if (exactResultCount < maxPageCount) {
-    results = [
-      ...results,
+  let prioritizePosts = prioritizePostsFor(lowerCaseTerm);
+
+  let results = [
       ...searcher.search(request.query.term),
-    ].filter(unique);
-    if (results.length > exactResultCount) {
-      includeFuzzyResults = true;
-    }
-    fuzzyResultCount = results.length - exactResultCount;
-  }
+  ];
+  results = results.sort(prioritizePosts);
 
   let totalResultCount = results.length;
   results = results.filter((filteringResult, indexOfThisResult, results) => {
@@ -126,10 +98,6 @@ function searchSite(request, response, next) {
   results = results.slice(0, maxPageCount);
 
   response.send({
-    exact: returnExactResults,
-    exactCount: exactResultCount,
-    fuzzy: includeFuzzyResults,
-    fuzzyCount: fuzzyResultCount,
     totalResultCount: totalResultCount,
     page: {
       length: maxPageCount,
@@ -144,7 +112,6 @@ function searchSite(request, response, next) {
     properties: {
       term: request.query.term,
       normalizedTerm: lowerCaseTerm.replace(/[^\w\s]+/g, ''),
-      exact: returnExactResults,
       resultCount: results.length,
     },
   });
