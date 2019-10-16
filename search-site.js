@@ -7,6 +7,7 @@ const track = require('./analytics.js');
 const fullPageList = [];
 var fuzzySearchOptions = {
   shouldSort: true,
+  includeScore: true,
   threshold: 0.5,
   location: 0,
   maxPatternLength: Infinity,
@@ -30,7 +31,7 @@ var fuzzySearchOptions = {
   ],
 };
 //const searcher = new FuzzySearch(fullPageList, ['title', 'description', 'author'], { sort: true, caseSensitive: false });
-const searcher = new Fuse(fullPageList, fuzzySearchOptions)
+const searcher = new Fuse(fullPageList, fuzzySearchOptions);
 const maxPageCount = 20;
 
 function prioritizePostsFor(term) {
@@ -51,19 +52,27 @@ function prioritizePostsFor(term) {
   }
 
   function scoreFor(prop, a, b) {
-    if (a[prop].toLowerCase().includes(term)) {
-      if (!b[prop].toLowerCase().includes(term)) {
+    if (a.item[prop].toLowerCase().includes(term)) {
+      if (!b.item[prop].toLowerCase().includes(term)) {
         return -1;
       }
-      let offsetScore = a[prop].toLowerCase().indexOf(term) - b[prop].toLowerCase().indexOf(term);
+      let offsetScore = a.item[prop].toLowerCase().indexOf(term) - b.item[prop].toLowerCase().indexOf(term);
       if (offsetScore){
         return offsetScore;
       }
-    } else if (b[prop].toLowerCase().includes(term)) {
+    } else if (b.item[prop].toLowerCase().includes(term)) {
       return 1;
     }
   }
 }
+
+function prioritizeByScore(a, b) {
+  if (a.item.priority === b.item.priority) {
+    return b.item.score - a.item.score;
+  } else {
+    return b.item.priority - a.item.priority;
+  }
+};
 
 function searchSite(request, response, next) {
   if (!request.query.term) {
@@ -78,13 +87,12 @@ function searchSite(request, response, next) {
   let lowerCaseTerm = request.query.term.trim().replace(/\s+/g, ' ').toLowerCase();
 
   response.status(200);
-
   let prioritizePosts = prioritizePostsFor(lowerCaseTerm);
-
-  let results = [
-      ...searcher.search(request.query.term),
-  ];
+  let results = [...searcher.search(request.query.term)];
   results = results.sort(prioritizePosts);
+  results = results.sort(prioritizeByScore);
+
+  results = results.map(result => result.item);
 
   let totalResultCount = results.length;
   results = results.filter((filteringResult, indexOfThisResult, results) => {
