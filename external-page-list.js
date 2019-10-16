@@ -14,6 +14,7 @@ const columnMap = {
   author: 5,
   image: 6,
   tags: 7,
+  priority: 8
 };
 const pagesAPIBaseURL = `https://api.hubapi.com/hubdb/api/v2/tables/1034244/rows?hapikey=${HAPI_KEY}&limit=${limit}&portalId=${PORTAL_ID}`;
 const allPages = JSON.parse(fs.readFileSync(resultsCachePath));
@@ -30,6 +31,7 @@ function mapPage(data) {
     author:      data.values[columnMap.author]      || '',
     image:       (data.values[columnMap.image] && data.values[columnMap.image].url ) || '',
     imageAlt:    '',
+    priority:    data.values[columnMap.priority]    || 0
   };
 }
 
